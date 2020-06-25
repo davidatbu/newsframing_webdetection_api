@@ -1,13 +1,11 @@
-import typing as T
-import os
 import logging
+import os
+import typing as T
 from pathlib import Path
 
 import pandas as pd
-from transformers.data.processors.utils import (
-    DataProcessor,
-    InputExample,
-)
+from transformers.data.processors.utils import DataProcessor
+from transformers.data.processors.utils import InputExample
 
 logger = logging.getLogger("webdetectclf")
 
@@ -91,9 +89,6 @@ class FrameProcessor(MultiPhaseTrainProcessor):
     def _create_examples(self, df, set_type) -> T.List[InputExample]:
         """Creates examples for the training and dev sets."""
 
-        # Headers should be
-        # created_at,id_str,ID,Sejin,Rachael,Final Answer,text
-
         examples = []
         for _, row in df.iterrows():
             row = row.fillna("")
@@ -107,9 +102,6 @@ class FrameProcessor(MultiPhaseTrainProcessor):
 class WebDetectProcessor(FrameProcessor):
     def _create_examples(self, df, set_type) -> T.List[InputExample]:
         """Creates examples for the training and dev sets."""
-
-        # Headers should be
-        # created_at,id_str,ID,Sejin,Rachael,Final Answer,text
 
         examples = []
         for _, row in df.iterrows():

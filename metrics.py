@@ -23,7 +23,6 @@ def exact_match_single(y_true: np.ndarray, y_pred: np.ndarray):
     return skmetrics.accuracy_score(cleaned_y_true, cleaned_y_pred)
 
 
-# TODO: Change terrible naming of y_logits to y_probs
 def tweetclf_compute_metrics(
     task_name: str, y_pred: np.ndarray, y_true: np.ndarray
 ) -> T.Dict[str, float]:
