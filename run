@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+import datetime
+import json
+import subprocess
+import typing as T
+from argparse import ArgumentParser
+from argparse import Namespace
+from pathlib import Path
+
+DATA_SUBSETS_D = Path(
+    # "/projectnb/llamagrp/davidat/projects/newsframing/images/webdetectionclf/data/ready/stans_folds/"
+    "/projectnb/llamagrp/davidat/projects/graphs/data/ready/"
+)
+OUTPUT_D = Path(
+    "/projectnb/llamagrp/davidat/projects/newsframing/images/webdetectionclf/pytorch_output/stans_folds"
+)
+
+# name, type, required, required if any of the following args are also provided
+class ArgDesc(T.NamedTuple):
+    type: T.Type
+    required: bool
+    necessary_if: list = []
+    default: T.Optional[T.Any] = None
+
+
+CHILD_PROG_ARGS = {
+    "task_name": ArgDesc(str, True, []),
+    "dataset_name": ArgDesc(str, True, []),
+    "model_type": ArgDesc(str, True, []),
+    "model_name_or_path": ArgDesc(str, True, []),
+    "per_gpu_train_batch_size": ArgDesc(str, True, ["do_train"]),
+    "learning_rate": ArgDesc(float, True, ["do_train"]),
+    "do_lower_case": ArgDesc(bool, False, []),
+    "use_focal_loss": ArgDesc(bool, False, []),
+    "max_seq_length": ArgDesc(int, True, []),
+    "focal_loss_gamma": ArgDesc(int, False, ["use_focal_loss"]),
+    "do_train": ArgDesc(bool, False, []),
+    "do_eval": ArgDesc(bool, False, []),
+    "num_train_epochs": ArgDesc(int, False, ["do_train"]),
+    "evaluate_during_training": ArgDesc(bool, False, []),
+    "save_steps": ArgDesc(int, True, []),
+    "logging_steps": ArgDesc(int, True, []),
+}
+
+CMD = "./run_one_fold.py"
+
+
+def arg_was_set(an_arg: str, arg_desc: ArgDesc, args):
+    if arg_desc.type == bool:
+        return getattr(args, an_arg)
+    else:
+        return getattr(args, an_arg) is not None
+
+
+def verify_args(args: Namespace) -> None:
+    if args.continue_dir is not None:
+        for an_arg, arg_desc in CHILD_PROG_ARGS.items():
+            if arg_was_set(an_arg, arg_desc, args):
+                raise Exception(
+                    f"--{an_arg} was set. No need to set other arguments if --conitnue_dir is provided. An 'args.json' should be in that dir."
+                )
+    for arg_name, (_, _, necessary_if, _) in CHILD_PROG_ARGS.items():
+        if necessary_if:
+            for other_arg in necessary_if:
+                if arg_was_set(
+                    arg_name, CHILD_PROG_ARGS[arg_name], args
+                ) and not arg_was_set(other_arg, CHILD_PROG_ARGS[other_arg], args):
+                    raise Exception(
+                        "{} provided, but, {} is not".format(arg_name, other_arg)
+                    )
+
+
+def contstruct_parser() -> ArgumentParser:
+    for arg_name, (_, required, necessary_if, default) in CHILD_PROG_ARGS.items():
+        # Check none with default values are required
+        if default is not None and required:
+            raise AssertionError(
+                "{} is required, but there's  a default value.".format(arg_name)
+            )
+        # Check dependencies
+        if necessary_if:
+            for other_arg in necessary_if:
+                if CHILD_PROG_ARGS[other_arg].type != bool:
+                    raise AssertionError(
+                        (
+                            "{} depends on {} being set, which is not a boolean type."
+                            "We don't yet support that."
+                        ).format(arg_name, other_arg)
+                    )
+
+    parser = ArgumentParser()
+
+    # Arguments for self
+    parser.add_argument(
+        "--continue_dir",
+        default=None,
+        type=str,
+        help="A directory that has folds in which to continue.",
+    )
+
+    # Arguments for child program
+    for arg_name, (type_, required, necessary_if, default) in CHILD_PROG_ARGS.items():
+        parser.add_argument(
+            "--" + arg_name,
+            action="store_true" if type_ == bool else "store",
+            required=required,
+            default=default,
+        )
+
+    return parser
+
+
+def main():
+    parser = contstruct_parser()
+    args = parser.parse_args()
+    verify_args(args)
+
+    if args.continue_dir is not None:
+        model_dr = Path(args.continue_dir)
+        args_json_f = model_dr / "args.json"
+        if not args_json_f.exists():
+            raise Exception(f"{str(args_json_f)} doesn't exist.")
+        with args_json_f.open() as f:
+            json_args = json.load(f)
+
+        done_folds = [
+            eval_result_f.parent.name
+            for eval_result_f in model_dr.glob("*/eval_results.*")
+        ]
+        args = Namespace(**json_args)
+
+        fold_drs = [
+            fold_dr
+            for fold_dr in (DATA_SUBSETS_D / args.dataset_name).iterdir()
+            if fold_dr.name not in done_folds
+        ]
+        print(
+            f"{done_folds} already done. Continuing with other {len(fold_drs)} folds."
+        )
+    else:
+        model_id = datetime.datetime.now().strftime("%H:%S,%d_%m_%y")
+        model_dr = OUTPUT_D / args.dataset_name / model_id
+
+        model_dr.parent.mkdir(exist_ok=True)
+        model_dr.mkdir(exist_ok=True)
+
+        with open(model_dr / "args.json", "w") as f:
+            json.dump(vars(args), f)
+
+        fold_drs = (DATA_SUBSETS_D / args.dataset_name).iterdir()
+
+    for data_dr in fold_drs:
+        fold_name = data_dr.name
+        output_dr = model_dr / fold_name
+        args.output_dir = str(output_dr)
+        args.data_dir = str(data_dr)
+
+        subprocess_cmd = [CMD]
+        for arg, value in vars(args).items():
+            arg = "--" + arg
+            if isinstance(value, bool):  # a flag
+                if value:
+                    subprocess_cmd.append(arg)
+            else:  # not a flag
+                if value is not None:
+                    subprocess_cmd.append(arg)
+                    subprocess_cmd.append(str(value))
+        print(subprocess_cmd)
+
+        subprocess.run(subprocess_cmd)
+
+    print("================ DONE ==================")
+    print("Model ID: {}".format(model_id))
+
+
+if __name__ == "__main__":
+    main()
