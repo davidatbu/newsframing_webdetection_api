@@ -15,57 +15,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Finetuning the library models for sequence classification on GLUE (Bert, XLM, XLNet, RoBERTa, Albert, XLM-RoBERTa)."""
-
-
 import argparse
 import glob
 import json
 import logging
 import os
 import random
-from pathlib import Path
 import typing as T
+from pathlib import Path
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
+from torch.utils.data import DataLoader
+from torch.utils.data import RandomSampler
+from torch.utils.data import SequentialSampler
+from torch.utils.data import TensorDataset
 from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm, trange
-
-from transformers import (
-    WEIGHTS_NAME,
-    AdamW,
-    AlbertConfig,
-    AlbertForSequenceClassification,
-    AlbertTokenizer,
-    BertTokenizer,
-    DistilBertConfig,
-    DistilBertForSequenceClassification,
-    DistilBertTokenizer,
-    FlaubertConfig,
-    FlaubertForSequenceClassification,
-    FlaubertTokenizer,
-    RobertaConfig,
-    RobertaForSequenceClassification,
-    RobertaTokenizer,
-    XLMConfig,
-    XLMForSequenceClassification,
-    XLMRobertaConfig,
-    XLMRobertaForSequenceClassification,
-    XLMRobertaTokenizer,
-    XLMTokenizer,
-    XLNetConfig,
-    XLNetForSequenceClassification,
-    XLNetTokenizer,
-    get_linear_schedule_with_warmup,
-)
+from tqdm import tqdm
+from tqdm import trange
+from transformers import AdamW
+from transformers import AlbertConfig
+from transformers import AlbertForSequenceClassification
+from transformers import AlbertTokenizer
+from transformers import BertTokenizer
+from transformers import DistilBertConfig
+from transformers import DistilBertForSequenceClassification
+from transformers import DistilBertTokenizer
+from transformers import FlaubertConfig
+from transformers import FlaubertForSequenceClassification
+from transformers import FlaubertTokenizer
+from transformers import get_linear_schedule_with_warmup
 from transformers import (
     glue_convert_examples_to_features as convert_examples_to_features,
 )
+from transformers import RobertaConfig
+from transformers import RobertaForSequenceClassification
+from transformers import RobertaTokenizer
+from transformers import WEIGHTS_NAME
+from transformers import XLMConfig
+from transformers import XLMForSequenceClassification
+from transformers import XLMRobertaConfig
+from transformers import XLMRobertaForSequenceClassification
+from transformers import XLMRobertaTokenizer
+from transformers import XLMTokenizer
+from transformers import XLNetConfig
+from transformers import XLNetForSequenceClassification
+from transformers import XLNetTokenizer
 
-from processors import output_modes, processors
 from metrics import tweetclf_compute_metrics as compute_metrics
-from modeling import BertModifiedLossConfig, BertForModifiedLossClassification
+from modeling import BertForModifiedLossClassification
+from modeling import BertModifiedLossConfig
+from processors import output_modes
+from processors import processors
 from utils import inverse_class_freqs
 
 
@@ -74,16 +75,7 @@ logger = logging.getLogger(__name__)
 ALL_MODELS = sum(
     (
         tuple(conf.pretrained_config_archive_map.keys())
-        for conf in (
-            BertModifiedLossConfig,
-            XLNetConfig,
-            XLMConfig,
-            RobertaConfig,
-            DistilBertConfig,
-            AlbertConfig,
-            XLMRobertaConfig,
-            FlaubertConfig,
-        )
+        for conf in (BertModifiedLossConfig,)
     ),
     (),
 )

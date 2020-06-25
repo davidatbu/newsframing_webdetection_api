@@ -1,13 +1,18 @@
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
-from transformers.modeling_bert import BertPreTrainedModel, BertModel
 from transformers import BertConfig
+from transformers.configuration_bert import BERT_PRETRAINED_CONFIG_ARCHIVE_MAP
+from transformers.modeling_bert import BertModel
+from transformers.modeling_bert import BertPreTrainedModel
 
 from losses import FocalLoss
 
 
 class BertModifiedLossConfig(BertConfig):
+
+    pretrained_config_archive_map = BERT_PRETRAINED_CONFIG_ARCHIVE_MAP
+
     def __init__(
         self,
         use_focal_loss=False,

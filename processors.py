@@ -16,19 +16,17 @@ class MultiPhaseTrainProcessor(DataProcessor):
     def get_number_of_train_phases(self, data_dir: str) -> int:
         train_prefixed_files = list(
             filter(
-                lambda s: s.startswith("train") and s.endswith(".csv"),
+                lambda s: s.startswith("train") and s.endswith(".tsv"),
                 sorted([p.name for p in Path(data_dir).iterdir()]),
             )
         )
-        if len(train_prefixed_files) == 1 and train_prefixed_files[0] == "train.csv":
+        if len(train_prefixed_files) == 1 and train_prefixed_files[0] == "train.tsv":
             return 0
         for i, basename in enumerate(train_prefixed_files, start=1):
-            if f"train{i}.csv" != basename:
+            if f"train{i}.tsv" != basename:
                 raise Exception(
-                    "Did not find files sequentially named 'train1.csv', 'train2.csv'."
+                    "Did not find files sequentially named 'train1.tsv', 'train2.tsv'."
                 )
-        if len(train_prefixed_files) == 0:
-            raise Exception("Found no files named train1.csv, train2.csv ...")
         return len(train_prefixed_files)
 
 
@@ -37,9 +35,9 @@ class FrameProcessor(MultiPhaseTrainProcessor):
         """See base class."""
 
         if phase:
-            file_path = f"train{phase}.csv"
+            file_path = f"train{phase}.tsv"
         else:
-            file_path = "train.csv"
+            file_path = "train.tsv"
         return self._create_examples(
             self._read_csv(os.path.join(data_dir, file_path)), "train"
         )
@@ -83,7 +81,7 @@ class FrameProcessor(MultiPhaseTrainProcessor):
         )
 
         with open(file_path) as f:
-            df = pd.read_csv(f, dtype=object, index_col=False)
+            df = pd.read_csv(f, dtype=object, sep="\t", index_col=False)
         return df
 
     def _create_examples(self, df, set_type) -> T.List[InputExample]:

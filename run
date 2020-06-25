@@ -7,12 +7,8 @@ from argparse import ArgumentParser
 from argparse import Namespace
 from pathlib import Path
 
-DATA_SUBSETS_D = Path(
-    "/projectnb/llamagrp/davidat/projects/newsframing/images/webdetectionclf/data/ready/stans_folds/"
-)
-OUTPUT_D = Path(
-    "/projectnb/llamagrp/davidat/projects/newsframing/images/webdetectionclf/pytorch_output/stans_folds"
-)
+DATA_SUBSETS_D = Path("./data_subsets/")
+OUTPUT_D = Path("/scratch")
 
 # name, type, required, required if any of the following args are also provided
 class ArgDesc(T.NamedTuple):
