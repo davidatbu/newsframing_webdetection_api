@@ -144,9 +144,7 @@ output_modes = {
 
 
 def main():
-    DATA_D = (
-        "/projectnb/llamagrp/davidat/projects/graphs/data/ready/gv_2018_1300_examples/0"
-    )
+    DATA_D = "data_subsets/all_data/0"
     frame_proc = FrameProcessor()
     # webdetect_proc = WebDetectProcessor()
     examples_per_split = {
