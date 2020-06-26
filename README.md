@@ -37,4 +37,6 @@ Here's a slightly annotated bash command that you should be able to use.
 	--do_train \
 	--do_eval
 ```
+## Where to find the results
 
+The [line here](https://github.com/davidatbu/newsframing_webdetection_api/blob/71452aa3529afebfbc63a99f8606c4457ee04a80/run#L11) specifies where the output of training (model weights, predictions, and metrics) will be.
