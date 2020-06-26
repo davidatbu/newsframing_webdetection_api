@@ -322,13 +322,13 @@ def train(args, processor, train_dataset, model, tokenizer, train_phase):
                             eval_key = phase_prefix + f"eval_{key}"
                             logs[eval_key] = value
 
-                        loss_scalar = (tr_loss - logging_loss) / args.logging_steps
-                        learning_rate_scalar = scheduler.get_lr()[0]
-                        logs[phase_prefix + "learning_rate"] = learning_rate_scalar
-                        logs[phase_prefix + "loss"] = loss_scalar
-                        logging_loss = tr_loss
+                    loss_scalar = (tr_loss - logging_loss) / args.logging_steps
+                    learning_rate_scalar = scheduler.get_lr()[0]
+                    logs[phase_prefix + "learning_rate"] = learning_rate_scalar
+                    logs[phase_prefix + "loss"] = loss_scalar
+                    logging_loss = tr_loss
 
-                        print(json.dumps({**logs, **{"step": global_step}}))
+                    print(json.dumps({**logs, **{"step": global_step}}))
 
                 if (
                     args.local_rank in [-1, 0]
@@ -797,7 +797,7 @@ def main():
         device = torch.device(
             "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
         )
-        args.n_gpu = torch.cuda.device_count()
+        args.n_gpu = min(1, torch.cuda.device_count())  # Limit to one GPU
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
         device = torch.device("cuda", args.local_rank)
